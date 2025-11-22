@@ -2,15 +2,22 @@ import polars as pl
 import pint
 from typing import Union, Any
 
-ureg = pint.UnitRegistry()
-Unit = ureg.Unit
-Quantity = ureg.Quantity
+
+default_ureg = pint.UnitRegistry()
+Unit = default_ureg.Unit
+Quantity = default_ureg.Quantity
 
 
 class UExpr:
-    def __init__(self, expr: pl.Expr, unit: Union[str, Any]):
+    def __init__(
+        self,
+        expr: pl.Expr,
+        unit: Union[str, Any],
+        unit_registry: pint.UnitRegistry = None,
+    ):
         self.expr = expr
-        self.unit = unit  # pint Unit
+        self.ureg = unit_registry if unit_registry is not None else default_ureg
+        self.unit = self.ureg.Unit(unit) if isinstance(unit, str) else unit
 
     def __getattr__(self, name):
         # Never forward internal or dunder methods
@@ -65,9 +72,9 @@ class UExpr:
                     unit = (
                         self.unit
                         if name not in dimensionless_methods
-                        else ureg.dimensionless
+                        else self.ureg.dimensionless
                     )
-                    return UExpr(result, unit)
+                    return UExpr(result, unit, unit_registry=self.ureg)
                 return result
 
             return method
@@ -79,19 +86,22 @@ class UExpr:
     # -----------------------
 
     @classmethod
-    def col(cls, name: str, unit: Union[str, Any]) -> "UExpr":
+    def col(
+        cls, name: str, unit: Union[str, Any], unit_registry: pint.UnitRegistry = None
+    ) -> "UExpr":
         """
         Wrap a Polars column as a unit-aware expression.
         """
-        return cls(pl.col(name), ureg.Unit(unit))
+        ureg = unit_registry if unit_registry is not None else default_ureg
+        return cls(pl.col(name), ureg.Unit(unit), unit_registry=ureg)
 
     def to(self, new_unit: Union[str, Any]) -> "UExpr":
         """
         Convert this quantity to a new unit by inserting a scalar factor.
         """
-        new_unit = ureg.Unit(new_unit)
+        new_unit = self.ureg.Unit(new_unit) if isinstance(new_unit, str) else new_unit
         factor = (1 * self.unit).to(new_unit).magnitude  # scalar
-        return UExpr(self.expr * factor, new_unit)
+        return UExpr(self.expr * factor, new_unit, unit_registry=self.ureg)
 
     @property
     def dimensionality(self):
@@ -105,7 +115,7 @@ class UExpr:
         if not self.is_dimensionless:
             raise pint.DimensionalityError(
                 self.unit,
-                ureg.dimensionless,
+                self.ureg.dimensionless,
                 f"{op_name} requires a dimensionless quantity",
             )
 
@@ -142,27 +152,27 @@ class UExpr:
 
     def __rtruediv__(self, other):
         if isinstance(other, (int, float)):
-            new_unit = ureg.Unit("dimensionless") / self.unit
-            return UExpr(other / self.expr, new_unit)
+            new_unit = self.ureg.Unit("dimensionless") / self.unit
+            return UExpr(other / self.expr, new_unit, unit_registry=self.ureg)
         else:
             return NotImplemented
 
     def __pow__(self, other) -> "UExpr":
         if isinstance(other, (int, float)):
             # Raise unit to a power
-            new_unit = self.unit ** other
-            return UExpr(self.expr ** other, new_unit)
+            new_unit = self.unit**other
+            return UExpr(self.expr**other, new_unit)
         else:
             return NotImplemented
 
     def __rpow__(self, other):
         if isinstance(other, (int, float)):
-            return UExpr(other ** self.expr, self.unit)
+            return UExpr(other**self.expr, self.unit)
         else:
             return NotImplemented
 
     def sqrt(self) -> "UExpr":
-        return UExpr(self.expr.sqrt(), self.unit ** 0.5)
+        return UExpr(self.expr.sqrt(), self.unit**0.5, unit_registry=self.ureg)
 
     def unwrap(self) -> pl.Expr:
         """Return the underlying pl.Expr for DataFrame operations."""
@@ -194,10 +204,10 @@ class UExpr:
         return self._cmp_same_dim(other, lambda a, b: a != b)
 
     def __abs__(self) -> "UExpr":
-        return UExpr(abs(self.expr), self.unit)
+        return UExpr(abs(self.expr), self.unit, unit_registry=self.ureg)
 
     def __neg__(self) -> "UExpr":
-        return UExpr(-self.expr, self.unit)
+        return UExpr(-self.expr, self.unit, unit_registry=self.ureg)
 
     def _binary_op_same_dim(self, other, op):
         # Support arithmetic between UExprs with compatible units
@@ -208,10 +218,10 @@ class UExpr:
             else:
                 other_converted = other
             result_expr = op(self.expr, other_converted.expr)
-            return UExpr(result_expr, self.unit)
+            return UExpr(result_expr, self.unit, unit_registry=self.ureg)
         elif isinstance(other, (int, float)):
             result_expr = op(self.expr, other)
-            return UExpr(result_expr, self.unit)
+            return UExpr(result_expr, self.unit, unit_registry=self.ureg)
         else:
             raise TypeError(
                 f"Unsupported operand type(s) for operation: '{type(self)}' and '{type(other)}'"

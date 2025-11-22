@@ -1,1 +1,1 @@
-from .uexpr import UExpr, ureg, Unit, Quantity
+from .uexpr import UExpr, default_ureg, Unit, Quantity

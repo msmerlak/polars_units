@@ -2,10 +2,12 @@ import polars as pl
 import pytest
 from polars_units import UExpr
 
+
 def test_col_and_unit():
     expr = UExpr.col("distance", "meter")
     assert str(expr.unit) == "meter"
     assert isinstance(expr.expr, pl.Expr)
+
 
 def test_addition_same_unit():
     a = UExpr.col("a", "meter")
@@ -13,11 +15,13 @@ def test_addition_same_unit():
     c = a + b
     assert str(c.unit) == "meter"
 
+
 def test_addition_different_unit():
     a = UExpr.col("a", "meter")
     b = UExpr.col("b", "centimeter")
     c = a + b
     assert str(c.unit) == "meter"
+
 
 def test_multiplication():
     a = UExpr.col("a", "meter")
@@ -31,6 +35,7 @@ def test_multiplication():
     e = 2 * a
     assert str(e.unit) == "meter"
 
+
 def test_division():
     a = UExpr.col("a", "meter")
     b = UExpr.col("b", "second")
@@ -43,12 +48,14 @@ def test_division():
     e = 10 / a
     assert str(e.unit) == "1 / meter"
 
+
 def test_power_and_sqrt():
     a = UExpr.col("a", "meter")
-    b = a ** 2
+    b = a**2
     assert str(b.unit) == "meter ** 2"
     c = a.sqrt()
     assert str(c.unit) == "meter ** 0.5"
+
 
 def test_comparisons():
     a = UExpr.col("a", "meter")
@@ -65,6 +72,7 @@ def test_comparisons():
     with pytest.raises(TypeError):
         a != 5
 
+
 def test_dimensionless_functions():
     a = UExpr.col("x", "dimensionless")
     log_expr = a.log()
@@ -78,12 +86,14 @@ def test_dimensionless_functions():
     with pytest.raises(Exception):
         b.exp()
 
+
 def test_aggregations():
     a = UExpr.col("a", "meter")
     assert str(a.sum().unit) == "meter"
     assert str(a.mean().unit) == "meter"
     assert str(a.min().unit) == "meter"
     assert str(a.max().unit) == "meter"
+
 
 def test_alias_repr():
     a = UExpr.col("a", "meter")

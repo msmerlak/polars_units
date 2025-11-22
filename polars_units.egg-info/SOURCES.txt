@@ -1,0 +1,12 @@
+README.md
+pyproject.toml
+polars_units/__init__.py
+polars_units/uexpr.py
+polars_units.egg-info/PKG-INFO
+polars_units.egg-info/SOURCES.txt
+polars_units.egg-info/dependency_links.txt
+polars_units.egg-info/requires.txt
+polars_units.egg-info/top_level.txt
+tests/test_uexpr.py
+tests/test_uexpr_computational.py
+tests/test_uexpr_dataframe.py

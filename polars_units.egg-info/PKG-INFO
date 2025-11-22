@@ -1,0 +1,35 @@
+Metadata-Version: 2.4
+Name: polars_units
+Version: 0.1.0
+Summary: Unit-aware expressions for Polars using Pint.
+Author-email: Your Name <your@email.com>
+License-Expression: MIT
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Requires-Dist: polars>=0.19.0
+Requires-Dist: pint>=0.20
+
+# polars_units
+
+Unit-aware expressions for Polars using Pint.
+
+## Installation
+
+```sh
+pip install .
+```
+
+## Usage
+
+```python
+import polars as pl
+from polars_units import UExpr
+
+# Example: create a unit-aware column
+height = UExpr.col("height", "meter")
+
+# Use in Polars expressions
+expr = (height + UExpr.col("offset", "meter")).to("cm")
+```
+
+See the source for full API details.
