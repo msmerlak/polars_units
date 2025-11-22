@@ -1,0 +1,16 @@
+[project]
+name = "polars_units"
+version = "0.1.0"
+description = "Unit-aware expressions for Polars using Pint."
+authors = [ { name = "Your Name", email = "your@email.com" } ]
+license = "MIT"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "polars>=0.19.0",
+    "pint>=0.20"
+]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
